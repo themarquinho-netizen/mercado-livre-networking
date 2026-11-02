@@ -1,0 +1,73 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>Comparação de Backups</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header>
+    <h1>Network Automation</h1>
+    <p>Comparação de configurações</p>
+</header>
+
+<main>
+    <section class="status">
+        <h2>Resultado da Comparação</h2>
+
+        <p><strong>Backup anterior:</strong> {{ backup_old }}</p>
+        <p><strong>Backup atual:</strong> {{ backup_new }}</p>
+
+<div class="comparison-summary">
+
+    <div class="summary-item">
+        <strong>{{ result.added_count }}</strong>
+        <span>Linhas adicionadas</span>
+    </div>
+
+    <div class="summary-item">
+        <strong>{{ result.removed_count }}</strong>
+        <span>Linhas removidas</span>
+    </div>
+
+    <div class="summary-item">
+        <strong>{{ result.total_changes }}</strong>
+        <span>Total de alterações</span>
+    </div>
+
+</div>
+
+        {% if result.identical %}
+            <p>Nenhuma alteração identificada.</p>
+        {% else %}
+            <h3>Diferenças encontradas</h3>
+            <pre class="diff-output">{% for line in result.differences %}<span class="{% if line.startswith('+') and not line.startswith('+++') %}diff-added{% elif line.startswith('-') and not line.startswith('---') %}diff-removed{% else %}diff-context{% endif %}">{{ line }}
+</span>{% endfor %}</pre>
+        {% endif %}
+
+<form action="{{ url_for('baixar_relatorio_comparacao') }}"
+      method="POST">
+
+    <input type="hidden"
+           name="backup_old"
+           value="{{ backup_old }}">
+
+    <input type="hidden"
+           name="backup_new"
+           value="{{ backup_new }}">
+
+<button type="submit" class="btn-download">
+    Baixar Relatório TXT
+</button>
+
+        <a href="{{ url_for('index') }}">
+            Voltar ao painel
+        </a>
+    </section>
+</main>
+</body>
+</html>

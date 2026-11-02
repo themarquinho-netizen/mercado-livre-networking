@@ -1,0 +1,526 @@
+﻿
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Automation</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header>
+    <h1>Network Automation</h1>
+    <p>Plataforma de gerenciamento de infraestrutura de redes</p>
+</header>
+
+<main>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="message {{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
+
+    <section class="cards">
+        <div class="card">
+            <h2>Equipamentos</h2>
+            <p>Gerenciamento de switches e roteadores</p>
+        </div>
+
+        <div class="card">
+            <h2>Backups</h2>
+            <p>Gerenciamento de configurações</p>
+        </div>
+
+        <div class="card">
+            <h2>VLANs</h2>
+            <p>Gerenciamento de redes virtuais</p>
+        </div>
+    </section>
+
+    <section class="status">
+        <h2>Cadastro de equipamentos</h2>
+
+        <form action="{{ url_for('cadastrar_equipamento') }}"
+              method="POST">
+
+            <label>Hostname</label>
+            <input type="text" name="hostname"
+                   placeholder="SW-CORE-01" required>
+
+            <label>Endereço IP</label>
+            <input type="text" name="host"
+                   placeholder="192.168.1.10" required>
+
+            <label>Fabricante</label>
+            <select name="manufacturer" required>
+                <option value="">Selecione</option>
+                <option>Dell</option>
+                <option>Cisco</option>
+                <option>Juniper</option>
+                <option>Fortinet</option>
+                <option>Palo Alto</option>
+            </select>
+
+            <label>Modelo / Sistema operacional</label>
+            <select name="device_type" required>
+                <option value="">Selecione</option>
+                {% for label, value in device_types.items() %}
+                    <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Porta SSH</label>
+            <input type="number" name="port"
+                   value="22" min="1" max="65535" required>
+
+            <button type="submit">Cadastrar equipamento</button>
+        </form>
+    </section>
+
+    <section class="status">
+        <h2>Inventário de equipamentos</h2>
+
+        <p>Total cadastrado: {{ devices|length }}</p>
+
+        {% if devices %}
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Hostname</th>
+                            <th>IP</th>
+                            <th>Fabricante</th>
+                            <th>Tipo</th>
+                            <th>Porta</th>
+                            <th>Status</th>
+                            <th>Teste SSH</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for device in devices %}
+                        <tr>
+                            <td>{{ device.hostname }}</td>
+                            <td>{{ device.host }}</td>
+                            <td>{{ device.manufacturer }}</td>
+                            <td>{{ device.device_type }}</td>
+                            <td>{{ device.port }}</td>
+                            <td>{{ device.status }}</td>
+                            <td>
+                                <form action="{{ url_for(
+                                    'testar_equipamento',
+                                    device_id=device.id
+                                ) }}" method="POST">
+
+                                    <input type="text"
+                                           name="username"
+                                           placeholder="Usuário"
+                                           required>
+
+                                    <input type="password"
+                                           name="password"
+                                           placeholder="Senha"
+                                           required>
+
+                                    <button type="submit">
+                                        Testar SSH
+                                    </button>
+                                </form>
+
+<!-- INÍCIO DO NOVO CÓDIGO DE BACKUP -->
+{% if device.device_type == "cisco_ios" %}
+<form action="{{ url_for('backup_equipamento', device_id=device.id) }}"
+      method="POST">
+
+    <input type="text"
+           name="username"
+           placeholder="Usuário SSH para backup"
+           required>
+
+    <input type="password"
+           name="password"
+           placeholder="Senha SSH para backup"
+           required>
+
+    <button type="submit">
+        Realizar Backup
+    </button>
+</form>
+{% endif %}
+<!-- FIM DO NOVO CÓDIGO DE BACKUP -->
+
+</td>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p>Nenhum equipamento cadastrado.</p>
+        {% endif %}
+    </section>
+
+<section class="status">
+    <h2>Automação Cisco - VLANs e Hostname</h2>
+
+    <p>Configure switches Cisco utilizando Python e Netmiko.</p>
+
+    <form action="{{ url_for('configurar_cisco') }}" method="POST">
+
+        <label>Selecionar equipamento Cisco</label>
+        <select name="device_id" required>
+            <option value="">Selecione o equipamento</option>
+            {% for device in devices %}
+                {% if device.device_type == 'cisco_ios' %}
+                    <option value="{{ device.id }}">
+                        {{ device.hostname }} - {{ device.host }}
+                    </option>
+                {% endif %}
+            {% endfor %}
+        </select>
+
+        <label>Usuário SSH</label>
+        <input type="text" name="username"
+               placeholder="automacao" required>
+
+        <label>Senha SSH</label>
+        <input type="password" name="password" required>
+
+        <label>Novo hostname</label>
+        <input type="text" name="new_hostname"
+               value="SWITCH-AUTOMATIZADO" required>
+
+        <h3>Configuração de VLANs</h3>
+
+        <label>VLAN 10</label>
+        <input type="text" name="vlan_10"
+               value="VLAN_DADOS" required>
+
+        <label>VLAN 20</label>
+        <input type="text" name="vlan_20"
+               value="VLAN_VOZ" required>
+
+        <label>VLAN 50</label>
+        <input type="text" name="vlan_50"
+               value="VLAN_SEGURANCA" required>
+
+        <button type="submit" name="action" value="preview">
+    Pré-validar configuração
+</button>
+
+<button type="submit" name="action" value="apply"
+        onclick="return confirm('Confirma a aplicação das configurações no switch Cisco?');">
+    Aplicar configuração Cisco
+</button>
+
+    </form>
+</section>
+<section class="status">
+    <h2>Histórico de Backups</h2>
+
+    <p>Total de backups: {{ backups|length }}</p>
+
+    {% if backups %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Arquivo</th>
+                    <th>Tamanho (bytes)</th>
+                    <th>Data de criação/modificação</th>
+					<th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+
+{% for backup in backups %}
+<tr>
+    <td>{{ backup.filename }}</td>
+    <td>{{ backup.size }}</td>
+    <td>{{ backup.date }}</td>
+
+<td>
+    <a href="{{ url_for('visualizar_backup', filename=backup.filename) }}"
+       target="_blank"
+       rel="noopener noreferrer"
+       class="btn-download">
+        Visualizar Backup
+    </a>
+
+    <a href="{{ url_for('download_backup', filename=backup.filename) }}"
+       class="btn-download">
+        Baixar Backup
+    </a>
+</td>
+
+</tr>
+{% endfor %}
+
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <p>Nenhum backup encontrado.</p>
+    {% endif %}
+</section>
+
+
+<section class="status">
+    <h2>Comparação de Backups</h2>
+
+    <p>Selecione dois backups para identificar alterações.</p>
+
+    <form action="{{ url_for('comparar_backups') }}" method="POST">
+
+        <label>Backup anterior:</label>
+        <select name="backup_old" required>
+            <option value="">Selecione um backup</option>
+            {% for backup in backups %}
+            <option value="{{ backup.filename }}">
+                {{ backup.filename }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <label>Backup atual:</label>
+        <select name="backup_new" required>
+            <option value="">Selecione um backup</option>
+            {% for backup in backups %}
+            <option value="{{ backup.filename }}">
+                {{ backup.filename }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <button type="submit">
+            Comparar Backups
+        </button>
+
+    </form>
+</section>
+
+<section class="status">
+    <h2>Relatórios de VLANs</h2>
+
+    <p>Total de relatórios: {{ relatorios_vlan|length }}</p>
+
+    {% if relatorios_vlan %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Arquivo</th>
+                    <th>Tamanho (bytes)</th>
+                    <th>Data</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for relatorio in relatorios_vlan %}
+                <tr>
+                    <td>{{ relatorio.filename }}</td>
+                    <td>{{ relatorio.size }}</td>
+                    <td>{{ relatorio.date }}</td>
+                    <td>
+                        <a href="{{ url_for('visualizar_relatorio_vlan', filename=relatorio.filename) }}"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="btn-download">
+                            Visualizar Relatório
+                        </a>
+
+                        <a href="{{ url_for('download_relatorio_vlan', filename=relatorio.filename) }}"
+                           class="btn-download">
+                            Baixar Relatório
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <p>Nenhum relatório de VLANs encontrado.</p>
+    {% endif %}
+</section>
+
+<section class="status">
+    <h2>Dashboard de Automação</h2>
+    <p>Indicadores das últimas operações registradas.</p>
+
+    <div class="dashboard-grid">
+
+        <div class="dashboard-card">
+            <h3>Total de registros</h3>
+            <strong>{{ indicadores.total }}</strong>
+        </div>
+
+        <div class="dashboard-card">
+            <h3>Sucessos</h3>
+            <strong class="audit-success">
+                {{ indicadores.sucessos }}
+            </strong>
+        </div>
+
+        <div class="dashboard-card">
+            <h3>Falhas</h3>
+            <strong class="audit-error">
+                {{ indicadores.falhas }}
+            </strong>
+        </div>
+
+        <div class="dashboard-card">
+            <h3>Simulações</h3>
+            <strong class="audit-test">
+                {{ indicadores.simulacoes }}
+            </strong>
+        </div>
+
+    </div>
+</section>
+
+<section class="status">
+    <h2>Histórico de Auditoria</h2>
+
+<form method="GET" action="{{ url_for('index') }}">
+
+    <label for="status_auditoria">Status:</label>
+    <select name="status_auditoria" id="status_auditoria">
+        <option value="TODOS" {% if status_filtro == "TODOS" %}selected{% endif %}>Todos</option>
+        <option value="SUCESSO" {% if status_filtro == "SUCESSO" %}selected{% endif %}>Sucesso</option>
+        <option value="FALHA" {% if status_filtro == "FALHA" %}selected{% endif %}>Falha</option>
+        <option value="SIMULADO" {% if status_filtro == "SIMULADO" %}selected{% endif %}>Simulado</option>
+    </select>
+
+    <label for="equipamento_auditoria">Equipamento:</label>
+    <input
+        type="text"
+        name="equipamento_auditoria"
+        id="equipamento_auditoria"
+        value="{{ equipamento_filtro }}"
+        placeholder="Exemplo: SW-LAB"
+    >
+
+    <label for="data_inicio">Data inicial:</label>
+    <input
+        type="date"
+        name="data_inicio"
+        id="data_inicio"
+        value="{{ data_inicio }}"
+    >
+
+    <label for="data_fim">Data final:</label>
+    <input
+        type="date"
+        name="data_fim"
+        id="data_fim"
+        value="{{ data_fim }}"
+    >
+
+    <button type="submit">Filtrar Auditoria</button>
+
+    <a href="{{ url_for('index') }}" class="btn-download">
+
+<button
+    type="submit"
+    formaction="{{ url_for('exportar_auditoria') }}"
+    formmethod="GET"
+>
+    Exportar CSV
+</button>
+
+        Limpar Filtros
+    </a>
+
+</form>
+
+    <p>Últimas 50 operações registradas pela aplicação.</p>
+
+    {% if auditoria %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Equipamento</th>
+                    <th>Ação</th>
+                    <th>Status</th>
+                    <th>Detalhes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for registro in auditoria %}
+                <tr>
+                    <td>{{ registro.data }}</td>
+                    <td>{{ registro.equipamento }}</td>
+                    <td>{{ registro.acao }}</td>
+                    <td>
+                        {% if registro.status == "SUCESSO" %}
+                            <span class="audit-success">SUCESSO</span>
+                        {% elif registro.status == "FALHA" %}
+                            <span class="audit-error">FALHA</span>
+                        {% else %}
+                            <span class="audit-test">{{ registro.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ registro.detalhes }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <p>Nenhum registro de auditoria encontrado.</p>
+    {% endif %}
+
+    <div class="paginacao-auditoria">
+        <p>
+            Total encontrado: {{ total_filtrado }} |
+            Página {{ pagina }} de {{ total_paginas }}
+        </p>
+
+        <div class="paginacao-botoes">
+            {% if pagina > 1 %}
+                <a class="btn-paginacao"
+                   href="{{ url_for(
+                       'index',
+                       pagina=pagina-1,
+                       status_auditoria=status_filtro,
+                       equipamento_auditoria=equipamento_filtro,
+                       data_inicio=data_inicio,
+                       data_fim=data_fim
+                   ) }}">
+                    Anterior
+                </a>
+            {% endif %}
+
+            {% if pagina < total_paginas %}
+                <a class="btn-paginacao"
+                   href="{{ url_for(
+                       'index',
+                       pagina=pagina+1,
+                       status_auditoria=status_filtro,
+                       equipamento_auditoria=equipamento_filtro,
+                       data_inicio=data_inicio,
+                       data_fim=data_fim
+                   ) }}">
+                    Próxima
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+</section>
+
+<section class="status">
+    <h2>Status da aplicação</h2>
+    <p>Network Automation está disponível.</p>
+</section>
+
+</main>
+</body>
+</html>

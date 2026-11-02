@@ -4,3 +4,31 @@ __pycache__/
 .pytest_cache/
 *.pyc
 backups/
+
+# Credenciais e configuracoes locais
+.env
+.env.*
+!.env.example
+equipamentos.json
+
+# Backups, evidencias locais e logs
+backups/
+logs/
+
+# Arquivos temporarios e copias
+*.bak
+*.bak_*
+*.pyc
+__pycache__/
+.pytest_cache/
+.venv/
+venv/
+
+# Arquivos do sistema e IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Backups temporarios de edicao
+*.antes_limpeza
