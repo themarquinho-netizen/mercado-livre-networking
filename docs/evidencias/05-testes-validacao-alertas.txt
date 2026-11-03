@@ -1,0 +1,15 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.10, pytest-9.2.0, pluggy-1.7.0 -- C:\Users\Marcos Rosa\AppData\Local\Programs\Python\Python314\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Projetos\mercado-livre-networking
+collecting ... collected 7 items
+
+tests/test_network.py::test_build_device_config PASSED                   [ 14%]
+tests/test_network.py::test_connection_requires_host PASSED              [ 28%]
+tests/test_network.py::test_save_backup PASSED                           [ 42%]
+tests/test_network.py::test_build_vlan_commands PASSED                   [ 57%]
+tests/test_network.py::test_vlan_invalid_id PASSED                       [ 71%]
+tests/test_alertas.py::test_alerta_vlan_divergente PASSED                [ 85%]
+tests/test_alertas.py::test_alerta_hostname_divergente PASSED            [100%]
+
+============================== 7 passed in 0.29s ==============================
