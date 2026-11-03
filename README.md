@@ -1,55 +1,40 @@
-# Network Automation — Desafio Técnico Mercado Livre
+# Network Automation | Desafio Técnico de Networking
 
-## 1. Visão geral
+Automação de configuração e validação de switches Cisco, desenvolvida em Python, com interface web Flask e comunicação SSH via Netmiko. O projeto foi validado em laboratório Cisco Modeling Labs (CML) e inclui documentação de planejamento de VPN IPsec entre FortiGate e Palo Alto.
 
-Projeto desenvolvido em Python para automatizar atividades de administração de equipamentos de rede Cisco, utilizando SSH e uma interface web.
+## Objetivo
 
-A solução foi construída como parte de um desafio técnico, com foco em automação, segurança operacional, rastreabilidade e validação de configurações.
+Padronizar alterações de configuração em switches Cisco e reduzir erros operacionais por meio de pré-visualização de comandos, coleta de backup, validação do estado após a alteração e registro de auditoria.
 
-## 2. Tecnologias utilizadas
+## Tecnologias
 
-- Python 3
-- Flask — interface web
-- Netmiko — comunicação SSH com equipamentos Cisco
-- Pytest — testes automatizados
-- HTML e CSS — frontend
-- Git — versionamento
-- Cisco Modeling Labs (CML) — laboratório virtual
+- Python 3, Flask, Netmiko e Pytest
+- HTML e CSS
+- Git e GitHub
+- Cisco Modeling Labs (CML), com switch Cisco virtual
 
-## 3. Funcionalidades
+## Funcionalidades
 
-### Gerenciamento de equipamentos
+**Inventário e acesso:** cadastro de equipamentos, consulta de informações e teste de conexão SSH.
 
-- Cadastro e consulta de equipamentos Cisco.
-- Teste de conectividade SSH.
-- Visualização de informações dos equipamentos.
+**Automação Cisco:** definição de hostname e configuração das VLANs 10, 20 e 50. A interface permite pré-visualizar os comandos (dry run) antes de executá-los. Na aplicação real, o sistema coleta informações anteriores, envia a configuração, consulta o estado resultante, valida hostname e VLANs, salva a configuração e registra o resultado.
 
-### Automação Cisco
+**Backup e rastreabilidade:** backup de configuração, histórico de arquivos, comparação entre backups, relatórios de VLANs, auditoria de operações, filtros, exportação CSV e indicadores no dashboard.
 
-- Configuração das VLANs 10, 20 e 50.
-- Alteração de hostname.
-- Pré-validação dos comandos por meio de Dry Run.
-- Aplicação de configurações via SSH.
-- Captura de informações antes e depois das alterações.
+### Parâmetros utilizados na validação do laboratório
 
-**Atenção:** o modo de aplicação realiza alterações no equipamento. Recomenda-se executar a pré-validação antes de aplicar configurações.
+| Item | Configuração esperada |
+| --- | --- |
+| Hostname | `SWITCH-AUTOMATIZADO` |
+| VLAN 10 | `VLAN_DADOS` |
+| VLAN 20 | `VLAN_VOZ` |
+| VLAN 50 | `VLAN_SEGURANCA` |
 
-### Backup e comparação
+A alteração foi aplicada no switch virtual e conferida por comandos Cisco, incluindo `show vlan brief`, `show running-config | include ^hostname` e `show startup-config | include ^hostname`.
 
-- Coleta e armazenamento de configurações.
-- Histórico de backups.
-- Comparação entre arquivos de configuração.
+> **Atenção:** a opção de aplicação altera a configuração do equipamento. Utilize apenas em ambientes autorizados e revise os comandos antes da execução.
 
-### Relatórios e auditoria
-
-- Relatórios de alterações de VLANs.
-- Registro de operações de automação.
-- Filtros por equipamento, status e período.
-- Exportação de histórico em CSV.
-- Dashboard de indicadores.
-- Paginação do histórico.
-
-## 4. Estrutura do projeto
+## Estrutura principal
 
 ```text
 mercado-livre-networking/
@@ -71,93 +56,80 @@ mercado-livre-networking/
 ├── static/
 │   └── style.css
 ├── tests/
-│   └── test_network.py
+│   ├── test_network.py
+│   └── test_alertas.py
 └── docs/
     ├── evidencias/
     └── vpn/
 ```
 
-## 5. Instalação
+Arquivos locais de inventário, credenciais, backups e logs não fazem parte da entrega pública.
 
-Clone o repositório:
+## Instalação e execução
 
-```bash
-git clone URL_DO_REPOSITORIO
-cd mercado-livre-networking
-```
+Pré-requisitos: Python 3, acesso SSH a um equipamento Cisco autorizado e conectividade de rede entre o computador e o equipamento.
 
-Crie um ambiente virtual:
+No PowerShell do Windows:
 
 ```powershell
+git clone https://github.com/themarquinho-netizen/mercado-livre-networking.git
+cd mercado-livre-networking
 py -m venv .venv
 .\.venv\Scripts\Activate.ps1
-```
-
-Instale as dependências:
-
-```powershell
 python -m pip install -r requirements.txt
-```
-
-## 6. Execução
-
-Inicie a aplicação:
-
-```powershell
 python app.py
 ```
 
-Acesse no navegador:
+Acesse `http://127.0.0.1:5000` no navegador. Cadastre o switch Cisco e informe usuário e senha SSH nos campos da interface. Para conferir a sequência de comandos sem modificar o equipamento, use **Pré-validar configuração**. Para realizar a alteração, utilize **Aplicar configuração Cisco** apenas após revisar os parâmetros.
 
-```text
-http://127.0.0.1:5000
-```
+## Testes e validação
 
-Cadastre o equipamento Cisco, informe os parâmetros necessários e utilize as funcionalidades disponíveis na interface.
-
-## 7. Testes
-
-Execute:
+Foram executados sete testes automatizados com Pytest:
 
 ```powershell
-python -m pytest -q
+python -m pytest -q tests/test_network.py tests/test_alertas.py
 ```
 
-Os testes automatizados verificam funcionalidades específicas do projeto. A validação completa da aplicação em equipamentos de rede deve ser realizada separadamente.
+Resultado registrado: **7 testes aprovados**.
 
-## 8. Segurança
+Os testes abrangem construção de parâmetros de conexão, validação de entrada, geração de comandos VLAN, backup e detecção de divergência de hostname e nome de VLAN. Os dois testes de divergência utilizam respostas simuladas (`mock`), sem alterar o equipamento. A aplicação efetiva das VLANs e do hostname foi validada separadamente no Cisco CML.
 
-- Credenciais devem permanecer fora do código versionado.
-- O arquivo `.env` não deve ser publicado.
-- Backups e logs locais não devem ser enviados ao repositório.
-- O modo Dry Run permite revisar comandos antes da aplicação.
-- Alterações reais devem ser executadas somente em equipamentos autorizados.
+### Evidências da Parte 1
 
-## 9. Laboratório
+- [Formulário de automação](docs/evidencias/01-frontend-automacao.png)
+- [Confirmação da configuração aplicada](docs/evidencias/02-configuracao-aplicada.png)
+- [Validação das VLANs e hostname no Cisco](docs/evidencias/03-validacao-cisco.png)
+- [Evidência complementar de configuração](docs/evidencias/04-startup-config.png)
+- [Resultado dos testes e alertas de divergência](docs/evidencias/05-testes-validacao-alertas.txt)
 
-O ambiente de testes utiliza o Cisco Modeling Labs (CML), com switch Cisco virtual, VLANs e comunicação SSH.
+A evidência de hostname salvo na startup-config foi também verificada em console com `show startup-config | include ^hostname`.
 
-As evidências de funcionamento serão disponibilizadas na pasta `docs/evidencias`, após revisão para remoção de informações sensíveis.
+## Parte 2 — Planejamento de VPN IPsec
 
-## 10. Planejamento de VPN
+A segunda parte apresenta o planejamento de uma VPN site-to-site entre FortiGate e Palo Alto, considerando endereçamento WAN, redes internas autorizadas, endereçamento do túnel, parâmetros de negociação IKE/IPsec, políticas de segurança, roteamento, automação, validação e monitoramento.
 
-A segunda parte do desafio contempla o planejamento de uma VPN IPsec entre equipamentos FortiGate e Palo Alto.
+- [Planejamento técnico da VPN](docs/vpn/planejamento-vpn.md)
+- [Topologia da VPN FortiGate ↔ Palo Alto](docs/vpn/Planejamento%20de%20VPN%20Site-to-Site%20Segura.png)
 
-A documentação técnica será disponibilizada em `docs/vpn`, incluindo os parâmetros de negociação, redes envolvidas, políticas de segurança, roteamento, validação e monitoramento.
+**Escopo:** documentação de arquitetura e procedimentos. A implantação prática da VPN entre os dois fabricantes não faz parte dos testes realizados neste repositório.
 
-A implementação prática da VPN é tratada separadamente do planejamento.
+## Segurança e cuidados operacionais
 
-## 11. Status do projeto
+- Não publicar credenciais, tokens, chaves privadas ou segredos de VPN.
+- Manter `.env`, arquivos de inventário local, backups e logs fora do repositório público.
+- Validar conectividade e permissões SSH antes de executar mudanças.
+- Utilizar a pré-visualização dos comandos e manter backup anterior à alteração.
+- Conferir o estado real do equipamento após a execução; a pré-visualização não equivale a uma validação do estado remoto.
 
-- Interface web: implementada.
-- Módulos de automação: implementados.
-- Backup e comparação: implementados.
-- Auditoria e relatórios: implementados.
-- Testes automatizados: executados com sucesso em validações anteriores.
-- Homologação final da automação Cisco: pendente.
-- Revisão final da documentação VPN: pendente.
-- Publicação e entrega: pendentes.
+## Situação da entrega
 
-## 12. Autor
+- Automação Cisco e interface web implementadas.
+- Configuração de VLANs e hostname aplicada e validada em laboratório CML.
+- Backup, auditoria e comparação de configurações implementados.
+- Sete testes automatizados aprovados, incluindo dois cenários simulados de divergência.
+- Planejamento e topologia da VPN publicados.
+- Código, documentação e evidências disponíveis no GitHub.
 
-Projeto desenvolvido para avaliação técnica de conhecimentos em redes, segurança e automação de infraestrutura.
+## Repositório
+
+https://github.com/themarquinho-netizen/mercado-livre-networking
